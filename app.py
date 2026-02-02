@@ -14,8 +14,18 @@ KEY_PATH = "key.json"
 
 # --- AUTHENTICATION ---
 try:
-    credentials = service_account.Credentials.from_service_account_file(KEY_PATH)
-    vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+    # 1. Try to load from Streamlit Cloud Secrets (Production)
+    if "gcp_service_account" in st.secrets:
+        # We parse the JSON string we pasted in Secrets
+        key_info = json.loads(st.secrets["gcp_service_account"]["info"])
+        credentials = service_account.Credentials.from_service_account_info(key_info)
+        vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+    
+    # 2. Try to load from local file (Development/Localhost)
+    else:
+        credentials = service_account.Credentials.from_service_account_file(KEY_PATH)
+        vertexai.init(project=PROJECT_ID, location=LOCATION, credentials=credentials)
+
 except Exception as e:
     st.error(f"Authentication Failed: {e}")
 
@@ -261,4 +271,5 @@ if st.session_state.get('draft_mode') and 'selected_clause' in st.session_state:
             data=draft_text,
             file_name=f"Notice_{target['clause_id']}.txt",
             mime="text/plain"
+
         )
