@@ -6,7 +6,37 @@ from pypdf import PdfReader
 from google.oauth2 import service_account
 from ics import Calendar, Event, DisplayAlarm
 from datetime import datetime, timedelta # Added timedelta for date math
+# --- PASSWORD PROTECTION ---
+def check_password():
+    """Returns `True` if the user had the correct password."""
 
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        if st.session_state["password"] == st.secrets["app_password"]:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]  # Don't keep password in memory
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if the user has already verified their password
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show input for password
+    st.text_input(
+        "🔒 Please enter the Password to access this tool:", 
+        type="password", 
+        on_change=password_entered, 
+        key="password"
+    )
+    
+    if "password_correct" in st.session_state:
+        st.error("😕 Password incorrect. Please ask the administrator.")
+    return False
+
+# STOP EVERYTHING if password is not correct
+if not check_password():
+    st.stop()
 # --- CONFIGURATION ---
 PROJECT_ID = "cc-claims" 
 LOCATION = "us-central1"
@@ -273,3 +303,4 @@ if st.session_state.get('draft_mode') and 'selected_clause' in st.session_state:
             mime="text/plain"
 
         )
+
